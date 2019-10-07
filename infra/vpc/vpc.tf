@@ -102,22 +102,6 @@ resource "aws_security_group" "public" {
   vpc_id = "${aws_vpc.main[count.index].id}"
   name = "public"
 
-  ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  // ALLOW 3000 from public
-//  ingress {
-//    from_port = 3000
-//    to_port = 3000
-//    protocol = "tcp"
-//    cidr_blocks = ["0.0.0.0/0"]
-//  }
-
   // ALLOW all ingress
   ingress {
     from_port = 0
@@ -140,52 +124,14 @@ resource "aws_security_group" "private" {
   vpc_id = "${aws_vpc.main[local.count - 1].id}"
   name = "private"
 
-  // ALLOW all ingress
+  // ALLOW 3000 from load balancer
   ingress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port = 22
-    to_port = 22
+    from_port = 3000
+    to_port = 3000
     protocol = "tcp"
-
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  // ALLOW 3000 from public subnet
-//  ingress {
-//    from_port = 3000
-//    to_port = 3000
-//    protocol = "tcp"
-//    security_groups = [
-//      "${aws_security_group.public[count.index].id}"
-//    ]
-//  }
-
-  // ALLOW ALL
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_security_group" "lb" {
-  count = local.count
-  vpc_id = "${aws_vpc.main[count.index].id}"
-  name = "lb"
-
-  // ALLOW all ingress
-  ingress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = [
+      "${aws_security_group.public[count.index].id}"
+    ]
   }
 
   // ALLOW ALL
@@ -201,7 +147,6 @@ output "vpc_id" {
   value = "${aws_vpc.main.*.id}"
 }
 
-
 output "subnet_public" {
   value = "${aws_subnet.public.*.id}"
 }
@@ -216,8 +161,4 @@ output "security_group_public" {
 
 output "security_group_private" {
   value = "${aws_security_group.private.*.id}"
-}
-
-output "security_group_lb" {
-  value = aws_security_group.lb.*.id
 }

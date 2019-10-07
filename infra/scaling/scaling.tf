@@ -33,7 +33,7 @@ resource "aws_lb" "lb" {
   name = "scaling"
   internal = false
   load_balancer_type = "application"
-  security_groups = data.terraform_remote_state.vpc.outputs.security_group_lb
+  security_groups = data.terraform_remote_state.vpc.outputs.security_group_public
   subnets = data.terraform_remote_state.vpc.outputs.subnet_public
   enable_deletion_protection = false
 }
@@ -111,12 +111,6 @@ resource "aws_iam_role" "scaling" {
   assume_role_policy = data.aws_iam_policy_document.assume.json
 }
 
-resource "aws_iam_role_policy" "scaling" {
-  name = "scaling"
-  role = aws_iam_role.scaling.id
-  policy = data.aws_iam_policy_document.scaling.json
-}
-
 data "aws_iam_policy_document" "assume" {
   statement {
     effect = "Allow"
@@ -128,25 +122,6 @@ data "aws_iam_policy_document" "assume" {
     }
     actions = [
       "sts:AssumeRole"
-    ]
-  }
-}
-
-data "aws_iam_policy_document" "scaling" {
-  statement {
-    sid = "S3Access"
-    effect = "Allow"
-    actions = [
-      "s3:PutObject",
-      "s3:GetObject",
-      "s3:CreateBucket",
-      "s3:ListBucket",
-      "s3:DeleteObject",
-      "s3:DeleteBucket",
-    ]
-    resources = [
-      "arn:aws:s3:::wjensen-wikipedia-store/*",
-      "arn:aws:s3:::wjensen-wikipedia-store",
     ]
   }
 }
@@ -164,7 +139,7 @@ resource "aws_launch_configuration" "ec2_conf" {
   user_data = file("${path.module}/../../bin/run_ec2.sh")
 
   iam_instance_profile = aws_iam_instance_profile.scaling.name
-  security_groups = data.terraform_remote_state.vpc.outputs.security_group_public
+  security_groups = data.terraform_remote_state.vpc.outputs.security_group_private
 
   lifecycle {
     create_before_destroy = true
